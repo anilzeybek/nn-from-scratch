@@ -54,9 +54,9 @@ class NN:
         for w, b in zip(self._weights, self._biases):
             x = self._sigmoid(x @ w + b)
 
-        return x
+        return x.squeeze()
 
-    def train(self, data, eps=1e-1, lr=1e-3, epoch=10000):
+    def train(self, data, eps=1e-1, lr=1e-1, epoch=10000):
         in_data = data[:, :-1]
         out_data = data[:, -1]
 
