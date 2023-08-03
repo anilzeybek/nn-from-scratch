@@ -46,17 +46,23 @@ class Var:
 
 
 def main():
-    x = Var(4, requires_grad=True)
-    y = Var(3, requires_grad=True)
+    xs = [1, 2, 3, 4, 5]
+    ys = [x*2 for x in xs]
 
-    result = x.square().add(Var(-3)).mul(y)
-    result.backward()
+    w = Var(7.2, requires_grad=True)
 
-    print(x.grad)
-    # x' = 24
+    for _ in range(10):
+        result = Var(0)
+        for x, y in zip(xs, ys):
+            a = w.mul(Var(x)).add(Var(-y)).square()
+            result = result.add(a)
 
-    print(y.grad)
-    # y' = 13
+        result = result.mul(Var(1/len(xs)))
+        result.backward()
+
+        w.val -= 0.1*w.grad
+
+    print(w)
 
 
 if __name__ == "__main__":
