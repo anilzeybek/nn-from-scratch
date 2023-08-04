@@ -26,7 +26,7 @@ def main():
     ], dtype=torch.float32)
 
     network = Model(input_size=2, output_size=1)
-    loss_fn = nn.BCELoss()
+    loss_fn = nn.MSELoss()
     optimizer = torch.optim.SGD(params=network.parameters(), lr=1e-1)
 
     for _ in range(100000):
