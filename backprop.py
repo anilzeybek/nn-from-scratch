@@ -1,22 +1,6 @@
 import numpy as np
  
 
-# class Tensor:
-#     def __init__(self, arr):
-#         self.arr = arr
-
-
-#     def __matmul__(self, other):
-#         result = [[0 for _ in range(len(other.arr[0]))] for _ in range(len(self.arr))]
-
-#         # perform matrix multiplication
-#         for i in range(len(self.arr)):
-#             for j in range(len(other.arr[0])):
-#                 for k in range(len(other.arr)):
-#                     result[i][j] += self.arr[i][k] * other.arr[k][j]
-
-#         return Tensor(result)
-
 class Var:
     def __init__(self, val, requires_grad=False, prev_var1=None, prev_var2=None, prev_op=None):
         self.val = val
@@ -122,28 +106,6 @@ class NN:
         loss = 1/n* loss
         return loss
 
-    def _matmul(self, A, B):
-        num_rows_A, num_cols_A = len(A), len(A[0])
-        num_rows_B, num_cols_B = len(B), len(B[0])
-
-        if num_cols_A != num_rows_B:
-            print("Matrix multiplication is not possible.")
-            return None
-
-        result = [[0 for _ in range(num_cols_B)] for _ in range(num_rows_A)]
-        for i in range(num_rows_A):
-            for j in range(num_cols_B):
-                for k in range(num_cols_A):  # or num_rows_B, as they are equal
-                    result[i][j] += A[i][k] * B[k][j]
-
-        return result
-
-    def _mat_vec_add(self, matrix, vector):
-        vector_broadcasted = [vector[i % len(vector)] for i in range(len(matrix))]
-        result = [[matrix[i][j] + vector_broadcasted[i] for j in range(len(matrix[0]))] for i in range(len(matrix))]
-
-        return result
-
     def _mat_sigmoid(self, matrix):
         for i in range(len(matrix)):
             for j in range(len(matrix[i])):
@@ -154,7 +116,7 @@ class NN:
     def forward(self, in_data):
         x = in_data.copy()
         for w, b in zip(self._weights, self._biases):
-            x = self._mat_sigmoid(self._mat_vec_add(self._matmul(x, w), b))
+            x = self._mat_sigmoid(x @ w + b)
 
         return x
 
@@ -187,11 +149,10 @@ def main():
         ])
 
     nn = NN([2, 2, 1])
-    nn.train(data, lr=1e-1, epoch=100000)
+    nn.train(data, lr=1e-1, epoch=10000)
 
     for i in data:
-        print(f"{i[0]} ^ {i[1]} = {nn.forward(np.expand_dims(i[:2], 1)).item():.3f}")
-
+        print(f"{i[0]} ^ {i[1]} = {nn.forward(np.expand_dims(i[:2], 0))[0][0].val:.3f}")
 
 
 if __name__ == "__main__":
