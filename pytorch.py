@@ -18,12 +18,15 @@ class Model(nn.Module):
 
 
 def main():
-    data = torch.tensor([
-        [0, 0, 0],
-        [0, 1, 1],
-        [1, 0, 1],
-        [1, 1, 0],
-    ], dtype=torch.float32)
+    data = torch.tensor(
+        [
+            [0, 0, 0],
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0],
+        ],
+        dtype=torch.float32,
+    )
 
     network = Model(input_size=2, output_size=1)
     loss_fn = nn.MSELoss()
@@ -43,5 +46,5 @@ def main():
         print(f"{i[0]} ^ {i[1]} = {network(i[:2]).item():.3f}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
