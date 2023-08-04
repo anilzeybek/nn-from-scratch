@@ -103,8 +103,8 @@ class NN:
             weights = np.random.random(size=(self.arch[i], self.arch[i+1]))
             biases = np.random.random(size=self.arch[i+1])
 
-            self._weights.append([[0]*self.arch[i+1]]*self.arch[i])
-            self._biases.append([0]*self.arch[i+1])
+            self._weights.append([[0 for _ in range(self.arch[i+1])] for _ in range(self.arch[i])])
+            self._biases.append([0 for _ in range(self.arch[i+1])])
 
             for j in range(self.arch[i]):
                 for k in range(self.arch[i+1]):
@@ -131,19 +131,17 @@ class NN:
             return None
 
         result = [[0 for _ in range(num_cols_B)] for _ in range(num_rows_A)]
-
         for i in range(num_rows_A):
             for j in range(num_cols_B):
                 for k in range(num_cols_A):  # or num_rows_B, as they are equal
                     result[i][j] += A[i][k] * B[k][j]
+
         return result
 
     def _mat_vec_add(self, matrix, vector):
-        # "Broadcast" the vector to match the shape of the matrix
         vector_broadcasted = [vector[i % len(vector)] for i in range(len(matrix))]
-
-        # Perform row-wise addition
         result = [[matrix[i][j] + vector_broadcasted[i] for j in range(len(matrix[0]))] for i in range(len(matrix))]
+
         return result
 
     def _mat_sigmoid(self, matrix):
@@ -185,11 +183,11 @@ def main():
             [0, 0, 0],
             [0, 1, 1],
             [1, 0, 1],
-            [1, 1, 1],
+            [1, 1, 0],
         ])
 
     nn = NN([2, 2, 1])
-    nn.train(data, lr=1e-1, epoch=100)
+    nn.train(data, lr=1e-1, epoch=100000)
 
     for i in data:
         print(f"{i[0]} ^ {i[1]} = {nn.forward(np.expand_dims(i[:2], 1)).item():.3f}")
