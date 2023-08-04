@@ -106,12 +106,8 @@ class NN:
                 self._biases[i][j] = Var(biases[j].item(), requires_grad=True)
 
     def _loss(self, pred, label):
-        n = len(pred)
-        loss = 0
-        for i in range(n):
-            loss += (pred[i][0] - label[i].item()).square()
-
-        loss = 1 / n * loss
+        loss = np.sum(np.square(label - pred))
+        loss *= 1 / (len(pred))
         return loss
 
     def _mat_sigmoid(self, matrix):
@@ -143,7 +139,7 @@ class NN:
         out_data = data[:, -1]
 
         for _ in range(epoch):
-            pred = self.forward(in_data)
+            pred = self.forward(in_data).squeeze()
             loss = self._loss(pred, out_data)
             print(loss)
 
