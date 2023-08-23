@@ -2,9 +2,7 @@ import numpy as np
 
 
 class Var:
-    def __init__(
-        self, val, requires_grad=False, prev_var1=None, prev_var2=None, prev_op=None
-    ):
+    def __init__(self, val, requires_grad=False, prev_var1=None, prev_var2=None, prev_op=None):
         self.val = val
         self.requires_grad = requires_grad
         if requires_grad:
@@ -65,9 +63,7 @@ class Var:
             self.prev_var1.backward(current_grad * self.prev_var2.val)
             self.prev_var2.backward(current_grad * self.prev_var1.val)
         elif self.prev_op == "sigmoid":
-            self.prev_var1.backward(
-                current_grad * self.sigmoid().val * (1 - self.sigmoid()).val
-            )
+            self.prev_var1.backward(current_grad * self.sigmoid().val * (1 - self.sigmoid()).val)
         elif self.prev_op is None:
             pass
         else:
@@ -91,71 +87,47 @@ class NN:
             weights = np.random.random(size=(self.arch[i], self.arch[i + 1]))
             biases = np.random.random(size=self.arch[i + 1])
 
-            self._weights.append(
-                [[0 for _ in range(self.arch[i + 1])] for _ in range(self.arch[i])]
+            np_weights = np.array(
+                [
+                    [Var(weights[j][k].item(), requires_grad=True) for k in range(self.arch[i + 1])]
+                    for j in range(self.arch[i])
+                ],
             )
-            self._biases.append([0 for _ in range(self.arch[i + 1])])
+            self._weights.append(np_weights)
 
-            for j in range(self.arch[i]):
-                for k in range(self.arch[i + 1]):
-                    self._weights[i][j][k] = Var(
-                        weights[j][k].item(), requires_grad=True
-                    )
+            np_biases = np.array(
+                [Var(biases[j].item(), requires_grad=True) for j in range(self.arch[i + 1])],
+            )
+            self._biases.append(np_biases)
 
-            for j in range(self.arch[i + 1]):
-                self._biases[i][j] = Var(biases[j].item(), requires_grad=True)
+    def forward(self, x):
+        def mat_sigmoid(matrix):
+            m, n = matrix.shape
+            for i in range(m):
+                for j in range(n):
+                    matrix[i][j] = matrix[i][j].sigmoid()
 
-    def _loss(self, pred, label):
-        loss = np.sum(np.square(label - pred))
-        loss *= 1 / (len(pred))
-        return loss
+            return matrix
 
-    def _mat_sigmoid(self, matrix):
-        for i in range(len(matrix)):
-            for j in range(len(matrix[i])):
-                matrix[i][j] = matrix[i][j].sigmoid()
-
-        return matrix
-
-    def forward(self, in_data):
-        x = in_data.copy()
         for w, b in zip(self._weights, self._biases):
-            x = self._mat_sigmoid(x @ w + b)
+            x = mat_sigmoid(x @ w + b)
 
         return x
 
-    def zero_grad(self):
-        for i in range(len(self._weights)):
-            for j in range(len(self._weights[i])):
-                for k in range(len(self._weights[i][j])):
+    def step(self, lr=1e-3):
+        for i in range(len(self.arch) - 1):
+            for j in range(self.arch[i]):
+                for k in range(self.arch[i + 1]):
+                    self._weights[i][j][k].val -= lr * self._weights[i][j][k].grad
                     self._weights[i][j][k].grad = 0
 
-        for i in range(len(self._biases)):
-            for j in range(len(self._biases[i])):
+            for j in range(self.arch[i + 1]):
+                self._biases[i][j].val -= lr * self._biases[i][j].grad
                 self._biases[i][j].grad = 0
-
-    def train(self, data, lr=1e-1, epoch=10000):
-        in_data = data[:, :-1]
-        out_data = data[:, -1]
-
-        for _ in range(epoch):
-            pred = self.forward(in_data).squeeze()
-            loss = self._loss(pred, out_data)
-            print(loss)
-
-            self.zero_grad()
-            loss.backward()
-
-            for i in range(len(self.arch) - 1):
-                for j in range(self.arch[i]):
-                    for k in range(self.arch[i + 1]):
-                        self._weights[i][j][k].val -= lr * self._weights[i][j][k].grad
-
-                for j in range(self.arch[i + 1]):
-                    self._biases[i][j].val -= lr * self._biases[i][j].grad
 
 
 def main():
+    np.random.seed(0)
     data = np.array(
         [
             [0, 0, 0],
@@ -166,11 +138,24 @@ def main():
         dtype=np.float32,
     )
 
-    nn = NN([2, 2, 1])
-    nn.train(data, lr=1e-1, epoch=100000)
+    model = NN([2, 2, 1])
+    in_data = data[:, :-1]
+    label = data[:, -1]
+
+    for i in range(20000):
+        pred = model.forward(in_data).squeeze()
+
+        n = pred.shape[0]
+        loss = 1 / n * np.sum(np.square(pred - label))
+        loss.backward()
+
+        model.step(lr=1)
+
+        if (i + 1) % 100 == 0:
+            print(f"epoch: {i+1}, loss:{loss}")
 
     for i in data:
-        print(f"{i[0]} ^ {i[1]} = {nn.forward(np.expand_dims(i[:2], 0))[0][0].val:.3f}")
+        print(f"{i[0]} ^ {i[1]} = {model.forward(np.expand_dims(i[:2], 0)).item().val:.3f}")
 
 
 if __name__ == "__main__":
