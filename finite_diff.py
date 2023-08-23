@@ -12,15 +12,15 @@ class NN:
             self._weights.append(np.random.random(size=(self.arch[i], self.arch[i + 1])))
             self._biases.append(np.random.random(size=self.arch[i + 1]))
 
-    def _relu(self, x):
-        return np.maximum(0, x)
+    def _sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
 
     def forward(self, in_data):
         x = in_data.copy()
         for w, b in zip(self._weights, self._biases):
-            x = self._relu(x @ w + b)
+            x = self._sigmoid(x @ w + b)
 
-        return x
+        return x.squeeze()
 
     def _finite_diff(self, in_data, out_data, loss_fn, eps):
         w_grads = [np.zeros_like(w_vec) for w_vec in self._weights]
@@ -62,29 +62,34 @@ class NN:
         return loss
 
 
-def generate_adder_data(n_samples=32, max_value=50):
-    a = np.random.randint(0, max_value, n_samples)
-    b = np.random.randint(0, max_value, n_samples)
-    sum = a + b
-
-    return np.column_stack((a, b)), sum
-
-
 def main():
-    model = NN([2, 16, 16, 1])
+    np.random.seed(0)
+    data = np.array(
+        [
+            [0, 0, 0],
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0],
+        ],
+        dtype=np.float32,
+    )
+
+    model = NN([2, 2, 1])
+    in_data = data[:, :-1]
+    label = data[:, -1]
 
     def loss_fn(pred, label):
-        n = len(pred)
+        n = pred.shape[0]
         return 1 / n * np.sum((pred - label) ** 2)
 
-    for i in range(10000):
-        inp, label = generate_adder_data(n_samples=32)
-        loss = model.step(inp, label, loss_fn, lr=1e-4, eps=1e-2)
+    for i in range(2000):
+        loss = model.step(in_data, label, loss_fn, lr=1, eps=1e-1)
 
         if (i + 1) % 100 == 0:
             print(f"epoch: {i+1} loss: {loss}")
 
-    print("==========")
+    for i in data:
+        print(f"{i[0]} ^ {i[1]} = {model.forward(np.expand_dims(i[:2], 0)).item():.3f}")
 
 
 if __name__ == "__main__":

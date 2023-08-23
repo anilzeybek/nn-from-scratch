@@ -147,7 +147,7 @@ def main():
         model.step(lr=1)
 
         if (i + 1) % 100 == 0:
-            print(f"epoch: {i+1}, loss:{loss}")
+            print(f"epoch: {i+1} loss: {loss}")
 
     for i in data:
         print(f"{i[0]} ^ {i[1]} = {model.forward(np.expand_dims(i[:2], 0)).item().val:.3f}")
