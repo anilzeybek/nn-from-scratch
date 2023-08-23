@@ -25,7 +25,10 @@ class Var:
         return Var(self.value * other.value, prev_var1=self, prev_var2=other, prev_op="mul")
 
     def __pow__(self, other):
-        return Var(self.value**other, prev_var1=self, prev_op="pow")
+        if not isinstance(other, Var):
+            other = Var(other)
+
+        return Var(self.value**other.value, prev_var1=self, prev_var2=other, prev_op="pow")
 
     def __radd__(self, other):
         return self + other
@@ -140,7 +143,7 @@ def main():
         pred = model.forward(in_data).squeeze()
 
         n = pred.shape[0]
-        loss = 1 / n * np.sum(np.square(pred - label))
+        loss = 1 / n * np.sum((pred - label) ** 2)
         loss.backward()
 
         model.step(lr=1)
