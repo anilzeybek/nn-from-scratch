@@ -88,8 +88,8 @@ class NN:
         self._biases = []
 
         for i in range(len(self.arch) - 1):
-            weights = np.random.random(size=(self.arch[i], self.arch[i + 1]))
-            biases = np.random.random(size=self.arch[i + 1])
+            weights = np.random.rand(self.arch[i], self.arch[i + 1])
+            biases = np.random.rand(self.arch[i + 1])
 
             np_weights = np.array(
                 [
@@ -137,7 +137,7 @@ def main():
     in_data = data[:, :-1]
     label = data[:, -1]
 
-    for i in range(20000):
+    for i in range(10000):
         pred = model.forward(in_data).squeeze()
 
         n = pred.shape[0]

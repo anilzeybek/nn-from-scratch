@@ -9,8 +9,8 @@ class NN:
         self._biases = []
 
         for i in range(len(self.arch) - 1):
-            self._weights.append(np.random.random(size=(self.arch[i], self.arch[i + 1])))
-            self._biases.append(np.random.random(size=self.arch[i + 1]))
+            self._weights.append(np.random.rand(self.arch[i], self.arch[i + 1]))
+            self._biases.append(np.random.rand(self.arch[i + 1]))
 
     def _sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
