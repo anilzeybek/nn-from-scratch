@@ -50,7 +50,7 @@ class NN:
 
         return curr_loss, w_grads, b_grads
 
-    def step(self, inp, label, loss_fn, lr=1e-4, eps=1e-1):
+    def step(self, inp, label, loss_fn, lr=1e-4, eps=1e-4):
         loss, w_grads, b_grads = self._finite_diff(inp, label, loss_fn, eps)
 
         for i in range(len(self._weights)):
@@ -83,7 +83,7 @@ def main():
         return 1 / n * np.sum((pred - label) ** 2)
 
     for i in range(2000):
-        loss = model.step(in_data, label, loss_fn, lr=1, eps=1e-1)
+        loss = model.step(in_data, label, loss_fn, lr=1)
 
         if (i + 1) % 100 == 0:
             print(f"epoch: {i+1} loss: {loss}")
