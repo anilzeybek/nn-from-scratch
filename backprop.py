@@ -63,7 +63,7 @@ class Var:
             self.prev_var1.backward(current_grad * self.prev_var2.val)
             self.prev_var2.backward(current_grad * self.prev_var1.val)
         elif self.prev_op == "sigmoid":
-            self.prev_var1.backward(current_grad * self.sigmoid().val * (1 - self.sigmoid()).val)
+            self.prev_var1.backward(current_grad * self.prev_var1.sigmoid().val * (1 - self.prev_var1.sigmoid().val))
         elif self.prev_op is None:
             pass
         else:
@@ -137,7 +137,7 @@ def main():
     in_data = data[:, :-1]
     label = data[:, -1]
 
-    for i in range(10000):
+    for i in range(2000):
         pred = model.forward(in_data).squeeze()
 
         n = pred.shape[0]
