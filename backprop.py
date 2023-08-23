@@ -72,6 +72,10 @@ class Var:
         if self.requires_grad:
             self.grad += current_grad
 
+    def grad_desc(self, lr):
+        self.val -= lr * self.grad
+        self.grad = 0
+
     def __repr__(self):
         return str(self.val)
 
@@ -102,12 +106,8 @@ class NN:
 
     def forward(self, x):
         def mat_sigmoid(matrix):
-            m, n = matrix.shape
-            for i in range(m):
-                for j in range(n):
-                    matrix[i][j] = matrix[i][j].sigmoid()
-
-            return matrix
+            vfunc = np.vectorize(lambda var: var.sigmoid())
+            return vfunc(matrix)
 
         for w, b in zip(self._weights, self._biases):
             x = mat_sigmoid(x @ w + b)
@@ -115,15 +115,10 @@ class NN:
         return x
 
     def step(self, lr=1e-3):
-        for i in range(len(self.arch) - 1):
-            for j in range(self.arch[i]):
-                for k in range(self.arch[i + 1]):
-                    self._weights[i][j][k].val -= lr * self._weights[i][j][k].grad
-                    self._weights[i][j][k].grad = 0
-
-            for j in range(self.arch[i + 1]):
-                self._biases[i][j].val -= lr * self._biases[i][j].grad
-                self._biases[i][j].grad = 0
+        vfunc = np.vectorize(lambda var: var.grad_desc(lr))
+        for i in range(len(self._weights)):
+            vfunc(self._weights[i])
+            vfunc(self._biases[i])
 
 
 def main():
