@@ -2,8 +2,8 @@ import numpy as np
 
 
 class Var:
-    def __init__(self, val, requires_grad=False, prev_var1=None, prev_var2=None, prev_op=None):
-        self.val = val
+    def __init__(self, value, requires_grad=False, prev_var1=None, prev_var2=None, prev_op=None):
+        self.value = value
         self.requires_grad = requires_grad
         if requires_grad:
             self.grad = 0
@@ -16,19 +16,19 @@ class Var:
         if not isinstance(other, Var):
             other = Var(other)
 
-        return Var(self.val * other.val, prev_var1=self, prev_var2=other, prev_op="mul")
+        return Var(self.value * other.value, prev_var1=self, prev_var2=other, prev_op="mul")
 
     def __rmul__(self, other):
         return self.__mul__(other)
 
     def square(self):
-        return Var(self.val**2, prev_var1=self, prev_op="square")
+        return Var(self.value**2, prev_var1=self, prev_op="square")
 
     def __add__(self, other):
         if not isinstance(other, Var):
             other = Var(other)
 
-        return Var(self.val + other.val, prev_var1=self, prev_var2=other, prev_op="add")
+        return Var(self.value + other.value, prev_var1=self, prev_var2=other, prev_op="add")
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -40,17 +40,17 @@ class Var:
         if not isinstance(other, Var):
             other = Var(other)
 
-        return Var(other.val - self.val, prev_var1=self, prev_var2=other, prev_op="sub")
+        return Var(other.value - self.value, prev_var1=self, prev_var2=other, prev_op="sub")
 
     def __neg__(self):
-        return Var(-self.val, prev_var1=self, prev_op="neg")
+        return Var(-self.value, prev_var1=self, prev_op="neg")
 
     def sigmoid(self):
-        return Var(1 / (1 + np.exp(-self.val)), prev_var1=self, prev_op="sigmoid")
+        return Var(1 / (1 + np.exp(-self.value)), prev_var1=self, prev_op="sigmoid")
 
     def backward(self, current_grad=1):
         if self.prev_op == "square":
-            self.prev_var1.backward(current_grad * 2 * self.prev_var1.val)
+            self.prev_var1.backward(current_grad * 2 * self.prev_var1.value)
         elif self.prev_op == "add":
             self.prev_var1.backward(current_grad)
             self.prev_var2.backward(current_grad)
@@ -60,10 +60,12 @@ class Var:
         elif self.prev_op == "neg":
             self.prev_var1.backward(-current_grad)
         elif self.prev_op == "mul":
-            self.prev_var1.backward(current_grad * self.prev_var2.val)
-            self.prev_var2.backward(current_grad * self.prev_var1.val)
+            self.prev_var1.backward(current_grad * self.prev_var2.value)
+            self.prev_var2.backward(current_grad * self.prev_var1.value)
         elif self.prev_op == "sigmoid":
-            self.prev_var1.backward(current_grad * self.prev_var1.sigmoid().val * (1 - self.prev_var1.sigmoid().val))
+            self.prev_var1.backward(
+                current_grad * self.prev_var1.sigmoid().value * (1 - self.prev_var1.sigmoid().value)
+            )
         elif self.prev_op is None:
             pass
         else:
@@ -73,11 +75,11 @@ class Var:
             self.grad += current_grad
 
     def grad_desc(self, lr):
-        self.val -= lr * self.grad
+        self.value -= lr * self.grad
         self.grad = 0
 
     def __repr__(self):
-        return str(self.val)
+        return str(self.value)
 
 
 class NN:
@@ -150,7 +152,7 @@ def main():
             print(f"epoch: {i+1} loss: {loss}")
 
     for i in data:
-        print(f"{i[0]} ^ {i[1]} = {model.forward(np.expand_dims(i[:2], 0)).item().val:.3f}")
+        print(f"{i[0]} ^ {i[1]} = {model.forward(np.expand_dims(i[:2], 0)).item().value:.3f}")
 
 
 if __name__ == "__main__":
