@@ -12,56 +12,48 @@ class Var:
         self.prev_var2 = prev_var2
         self.prev_op = prev_op
 
-    def __mul__(self, other):
-        if not isinstance(other, Var):
-            other = Var(other)
-
-        return Var(self.value * other.value, prev_var1=self, prev_var2=other, prev_op="mul")
-
-    def __rmul__(self, other):
-        return self.__mul__(other)
-
-    def square(self):
-        return Var(self.value**2, prev_var1=self, prev_op="square")
-
     def __add__(self, other):
         if not isinstance(other, Var):
             other = Var(other)
 
         return Var(self.value + other.value, prev_var1=self, prev_var2=other, prev_op="add")
 
-    def __radd__(self, other):
-        return self.__add__(other)
-
-    def __sub__(self, other):
-        return self.__add__(-other)
-
-    def __rsub__(self, other):
+    def __mul__(self, other):
         if not isinstance(other, Var):
             other = Var(other)
 
-        return Var(other.value - self.value, prev_var1=self, prev_var2=other, prev_op="sub")
+        return Var(self.value * other.value, prev_var1=self, prev_var2=other, prev_op="mul")
+
+    def __pow__(self, other):
+        return Var(self.value**other, prev_var1=self, prev_op="pow")
+
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __rsub__(self, other):
+        return other + (-self)
 
     def __neg__(self):
-        return Var(-self.value, prev_var1=self, prev_op="neg")
+        return self * -1
+
+    def __rmul__(self, other):
+        return self * other
 
     def sigmoid(self):
         return Var(1 / (1 + np.exp(-self.value)), prev_var1=self, prev_op="sigmoid")
 
     def backward(self, current_grad=1):
-        if self.prev_op == "square":
-            self.prev_var1.backward(current_grad * 2 * self.prev_var1.value)
-        elif self.prev_op == "add":
+        if self.prev_op == "add":
             self.prev_var1.backward(current_grad)
             self.prev_var2.backward(current_grad)
-        elif self.prev_op == "sub":
-            self.prev_var1.backward(-current_grad)
-            self.prev_var2.backward(current_grad)
-        elif self.prev_op == "neg":
-            self.prev_var1.backward(-current_grad)
         elif self.prev_op == "mul":
             self.prev_var1.backward(current_grad * self.prev_var2.value)
             self.prev_var2.backward(current_grad * self.prev_var1.value)
+        elif self.prev_op == "pow":
+            self.prev_var1.backward(current_grad * self.prev_var2.value * self.prev_var1.value**self.prev_var2.value)
         elif self.prev_op == "sigmoid":
             self.prev_var1.backward(
                 current_grad * self.prev_var1.sigmoid().value * (1 - self.prev_var1.sigmoid().value)
