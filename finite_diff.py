@@ -9,32 +9,31 @@ class NN:
         self._biases = []
 
         for i in range(len(self.arch) - 1):
-            self._weights.append(
-                np.random.random(size=(self.arch[i], self.arch[i + 1]))
-            )
+            self._weights.append(np.random.random(size=(self.arch[i], self.arch[i + 1])))
             self._biases.append(np.random.random(size=self.arch[i + 1]))
 
-    def _sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
+    def _relu(self, x):
+        return np.maximum(0, x)
 
-    def _loss(self, pred, label):
-        n = len(pred)
-        return 1 / n * np.sum((pred - label) ** 2)
+    def forward(self, in_data):
+        x = in_data.copy()
+        for w, b in zip(self._weights, self._biases):
+            x = self._relu(x @ w + b)
 
-    def _finite_diff(self, in_data, out_data, eps):
+        return x
+
+    def _finite_diff(self, in_data, out_data, loss_fn, eps):
         w_grads = [np.zeros_like(w_vec) for w_vec in self._weights]
         b_grads = [np.zeros_like(b_vec) for b_vec in self._biases]
 
-        curr_loss = self._loss(self.forward(in_data), out_data)
-        print(f"{curr_loss=}")
-
+        curr_loss = loss_fn(self.forward(in_data), out_data)
         for i in range(len(self._weights)):
             for j in range(self._weights[i].shape[0]):
                 for k in range(self._weights[i].shape[1]):
                     saved = self._weights[i][j][k].item()
                     self._weights[i][j][k] += eps
 
-                    new_loss = self._loss(self.forward(in_data), out_data)
+                    new_loss = loss_fn(self.forward(in_data), out_data)
                     w_grads[i][j][k] = (new_loss - curr_loss) / eps
 
                     self._weights[i][j][k] = saved
@@ -44,49 +43,48 @@ class NN:
                 saved = self._biases[i][j].item()
                 self._biases[i][j] += eps
 
-                new_loss = self._loss(self.forward(in_data), out_data)
+                new_loss = loss_fn(self.forward(in_data), out_data)
                 b_grads[i][j] = (new_loss - curr_loss) / eps
 
                 self._biases[i][j] = saved
 
-        return w_grads, b_grads
+        return curr_loss, w_grads, b_grads
 
-    def forward(self, in_data):
-        x = in_data.copy()
-        for w, b in zip(self._weights, self._biases):
-            x = self._sigmoid(x @ w + b)
+    def step(self, inp, label, loss_fn, lr=1e-4, eps=1e-1):
+        loss, w_grads, b_grads = self._finite_diff(inp, label, loss_fn, eps)
 
-        return x.squeeze()
+        for i in range(len(self._weights)):
+            self._weights[i] -= lr * w_grads[i]
 
-    def train(self, data, eps=1e-1, lr=1e-1, epoch=10000):
-        in_data = data[:, :-1]
-        out_data = data[:, -1]
+        for i in range(len(self._biases)):
+            self._biases[i] -= lr * b_grads[i]
 
-        for _ in range(epoch):
-            w_grads, b_grads = self._finite_diff(in_data, out_data, eps)
+        return loss
 
-            for i in range(len(self._weights)):
-                self._weights[i] -= lr * w_grads[i]
 
-            for i in range(len(self._biases)):
-                self._biases[i] -= lr * b_grads[i]
+def generate_adder_data(n_samples=32, max_value=50):
+    a = np.random.randint(0, max_value, n_samples)
+    b = np.random.randint(0, max_value, n_samples)
+    sum = a + b
+
+    return np.column_stack((a, b)), sum
 
 
 def main():
-    data = np.array(
-        [
-            [0, 0, 0],
-            [0, 1, 1],
-            [1, 0, 1],
-            [1, 1, 0],
-        ]
-    )
+    model = NN([2, 16, 16, 1])
 
-    nn = NN([2, 2, 1])
-    nn.train(data, epoch=100000)
+    def loss_fn(pred, label):
+        n = len(pred)
+        return 1 / n * np.sum((pred - label) ** 2)
 
-    for i in data:
-        print(f"{i[0]} ^ {i[1]} = {nn.forward(i[:2]).item():.3f}")
+    for i in range(10000):
+        inp, label = generate_adder_data(n_samples=32)
+        loss = model.step(inp, label, loss_fn, lr=1e-4, eps=1e-2)
+
+        if (i + 1) % 100 == 0:
+            print(f"epoch: {i+1} loss: {loss}")
+
+    print("==========")
 
 
 if __name__ == "__main__":
