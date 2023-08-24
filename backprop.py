@@ -30,6 +30,12 @@ class Var:
 
         return Var(self.value**other.value, prev_var1=self, prev_var2=other, prev_op="pow")
 
+    def __rpow__(self, other):
+        if not isinstance(other, Var):
+            other = Var(other)
+
+        return Var(other.value**self.value, prev_var1=other, prev_var2=self, prev_op="pow")
+
     def __radd__(self, other):
         return self + other
 
@@ -45,8 +51,14 @@ class Var:
     def __rmul__(self, other):
         return self * other
 
+    def __truediv__(self, other):
+        return self * other**-1
+
+    def __rtruediv__(self, other):
+        return other * self**-1
+
     def sigmoid(self):
-        return Var(1 / (1 + np.exp(-self.value)), prev_var1=self, prev_op="sigmoid")
+        return 1 / (1 + np.e ** (-self))
 
     def backward(self, current_grad=1):
         if self.prev_op == "add":
