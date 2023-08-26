@@ -74,10 +74,6 @@ class Var:
             self.prev_var2.backward(
                 current_grad * self.prev_var1.value**self.prev_var2.value * np.log(self.prev_var1.value)
             )
-        elif self.prev_op == "sigmoid":
-            self.prev_var1.backward(
-                current_grad * self.prev_var1.sigmoid().value * (1 - self.prev_var1.sigmoid().value)
-            )
         elif self.prev_op is None:
             pass
         else:
